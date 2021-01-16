@@ -1,6 +1,6 @@
 <?php
 /**
- * CloudFrameworkTests 2.1.5
+ * CloudFrameworkTests 2.1.6
  * last-update: 2021-01
  * https://www.notion.so/cloudframework/Designing-API-Tests-from-CloudFramework-afc8d166610f4b8e98742b98c504053f
  */
