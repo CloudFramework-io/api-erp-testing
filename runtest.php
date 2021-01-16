@@ -1,6 +1,6 @@
 <?php
 /**
- * CloudFrameworkTests 2.1.4
+ * CloudFrameworkTests 2.1.5
  * last-update: 2021-01
  * https://www.notion.so/cloudframework/Designing-API-Tests-from-CloudFramework-afc8d166610f4b8e98742b98c504053f
  */
@@ -3304,7 +3304,7 @@ echo "------------------------------\n";
 // Evaluate if you have access to source script
 if((isset($argv[1]) && $argv[1]=='update') || (!is_file($rootPath.'/local_data/'.$version_file))) {
     echo "Downloading CloudFrameworkTest last version\n";
-    $file =$core->request->get('https://api.cloudframework.io/core/tests/_download/v2');
+    $file =$core->request->get('https://api.cloudframework.io/core/api-erp-testing/_download/v2');
     if($core->request->error) {
         die("\nERROR downloading file\n".$file."\n\n");
     }
