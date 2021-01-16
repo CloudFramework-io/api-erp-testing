@@ -1,6 +1,6 @@
 <?php
 /**
- * CloudFrameworkTests
+ * CloudFrameworkTests 2.1.4
  * last-update: 2021-01
  * https://www.notion.so/cloudframework/Designing-API-Tests-from-CloudFramework-afc8d166610f4b8e98742b98c504053f
  */
@@ -3269,8 +3269,11 @@ if(!is_dir($rootPath.'/local_data/cache')) {
 }
 //endregion
 
+echo "CloudFramworkTest v202010\nroot_path: {$rootPath}\n";
 //region SET $core Core7 object
 $core = new Core7($rootPath);
+// Set the cache to be written in local_data
+$core->cache->activateCacheFile($rootPath.'/local_data/cache');
 //endregion
 
 //region SET $script & $formParams
@@ -3289,22 +3292,28 @@ if(count($argv)>1) {
 }
 //endregion
 
-echo "CloudFramworkTest v202010\nroot_path: {$rootPath}\n";
+$version =$core->request->get_json_decode('https://api.cloudframework.io/core/api-erp-testing/version');
+if($core->request->error) {
+    echo "ERROR IN CLOUDFRAMEWORK Service";
+    _printe($core->request->errorMsg);
+}
+$version_file = $version['data'].'.php';
 echo "------------------------------\n";
 
+
 // Evaluate if you have access to source script
-if((isset($argv[1]) && $argv[1]=='update') || (!is_file($rootPath.'/local_data/test_v2.cf'))) {
+if((isset($argv[1]) && $argv[1]=='update') || (!is_file($rootPath.'/local_data/'.$version_file))) {
     echo "Downloading CloudFrameworkTest last version\n";
     $file =$core->request->get('https://api.cloudframework.io/core/tests/_download/v2');
     if($core->request->error) {
         die("\nERROR downloading file\n".$file."\n\n");
     }
-    file_put_contents($rootPath.'/local_data/test_v2.cf',$file);
-    if(!is_file($rootPath.'/local_data/test_v2.cf')) die("\nERROR writting file\n\n");
-    die('Last version downloaded'."\n\n");
+    file_put_contents($rootPath.'/local_data/'.$version_file,$file);
+    if(!is_file($rootPath.'/local_data/'.$version_file)) die("\nERROR writting file local_data/{$version_file}\n\n");
+    echo('Last version downloaded: '.$version['data']."\n\n");
 }
 
-$script_file = '/local_data/test_v2.cf';
+$script_file = '/local_data/'.$version_file;
 echo "Using {$script_file}\n";
 include_once $rootPath.$script_file;
 if(!class_exists('Script')) die('The script does not include a "Class Script'."\nUse:\n-------\n<?php\nclass Script extends Scripts {\n\tfunction main() { }\n}\n-------\n\n");
