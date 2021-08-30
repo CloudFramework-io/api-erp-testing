@@ -1,7 +1,7 @@
 {
   "name": "cloudframework-io/api-erp-testing",
   "keywords": ["appengine", "google", "framework", "sql", "cloud datastore", "nosql","mysql","mongo","gcp","bigquery","gae","cloudframwork"],
-  "description": "2.1.6 Framework to develop APIs and web applications optimized for Google Appengine PHP 7.3",
+  "description": "2.1.7 Framework to develop APIs and web applications optimized for Google Appengine PHP 7.3",
   "type":"library",
   "minimum-stability": "stable",
   "license": "MIT",

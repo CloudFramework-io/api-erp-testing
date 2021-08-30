@@ -2181,8 +2181,22 @@ if (!defined("_CLOUDFRAMEWORK_CORE_CLASSES_")) {
             return ($ret);
         }
 
+        /**
+         * CURL METHOD
+         * @param $route
+         * @param null $data
+         * @param string $verb
+         * @param null $extra_headers
+         * @param false $raw
+         * @return false|string
+         * @throws Exception
+         */
         function getCurl($route, $data = null, $verb = 'GET', $extra_headers = null, $raw = false)
         {
+
+            $_time = microtime(TRUE);
+            if($this->sendSysLogs)
+                $this->core->logs->sendToSysLog("curl request {$verb} {$route} ".(($data === null) ? '{no params}' : '{with params}'));
 
             $this->core->__p->add('Request->getCurl: ', "$route " . (($data === null) ? '{no params}' : '{with params}'), 'note');
             $route = $this->getServiceUrl($route);
@@ -2212,8 +2226,11 @@ if (!defined("_CLOUDFRAMEWORK_CORE_CLASSES_")) {
                 }
             }
             // Build contents received in $data as an array
-            if (is_array($data)) {
+            if (is_array($data) ) {
                 if ($verb == 'GET') {
+                    // Add the parameter ? or & to add new variable
+                    $route .= (strpos($route,'?'))?'&':'?';
+                    //explore variable by variable
                     foreach ($data as $key => $value) {
                         if (is_array($value)) {
                             // This could be improved becuase the coding will produce 1738 format and 3986 format
@@ -2266,8 +2283,13 @@ if (!defined("_CLOUDFRAMEWORK_CORE_CLASSES_")) {
 
             if (!curl_errno($ch)) {
                 $header_len = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-                $this->responseHeaders = substr($ret, 0, $header_len);
+                $this->responseHeaders = explode("\n",substr($ret, 0, $header_len));
                 $ret = substr($ret, $header_len);
+                if($this->getLastResponseCode()>=400) {
+                    $this->addError('Error code returned: ' . $this->getLastResponseCode());
+                    $this->addError($this->responseHeaders);
+                    $this->addError($ret);
+                }
             } else {
                 $this->addError(error_get_last());
                 $this->addError([('Curl error ' . curl_errno($ch)) => curl_error($ch)]);
@@ -2276,6 +2298,11 @@ if (!defined("_CLOUDFRAMEWORK_CORE_CLASSES_")) {
             }
             curl_close($ch);
 
+            if($this->sendSysLogs) {
+                $_time = round(microtime(TRUE) -$_time,4);
+                $this->core->logs->sendToSysLog("end curl request {$verb} {$route} ".(($data === null) ? '{no params}' : '{with params}')." {$_time} secs",(($this->error)?'debug':'info'));
+            }
+
             $this->core->__p->add('Request->getCurl: ', '', 'endnote');
             return $ret;
 
@@ -2283,6 +2310,14 @@ if (!defined("_CLOUDFRAMEWORK_CORE_CLASSES_")) {
         }
 
 
+        /**
+         * GET CALL expecting a json response
+         * @param $route
+         * @param null $data
+         * @param null $extra_headers
+         * @param false $send_in_json
+         * @return bool[]|mixed|string[]
+         */
         function get_json_decode($route, $data = null, $extra_headers = null, $send_in_json = false)
         {
             $this->rawResult = $this->get($route, $data, $extra_headers, $send_in_json);
@@ -2294,6 +2329,14 @@ if (!defined("_CLOUDFRAMEWORK_CORE_CLASSES_")) {
             return $ret;
         }
 
+        /**
+         * POST CALL expecting a json response
+         * @param $route
+         * @param null $data
+         * @param null $extra_headers
+         * @param false $send_in_json
+         * @return bool[]|mixed|string[]
+         */
         function post_json_decode($route, $data = null, $extra_headers = null, $send_in_json = false)
         {
             $this->rawResult = $this->post($route, $data, $extra_headers, $send_in_json);
@@ -2305,6 +2348,14 @@ if (!defined("_CLOUDFRAMEWORK_CORE_CLASSES_")) {
             return $ret;
         }
 
+        /**
+         * PUT CALL expecting a json response
+         * @param $route
+         * @param null $data
+         * @param null $extra_headers
+         * @param false $send_in_json
+         * @return bool[]|mixed|string[]
+         */
         function put_json_decode($route, $data = null, $extra_headers = null, $send_in_json = false)
         {
             $this->rawResult = $this->put($route, $data, $extra_headers, $send_in_json);
@@ -2317,6 +2368,14 @@ if (!defined("_CLOUDFRAMEWORK_CORE_CLASSES_")) {
         }
 
 
+        /**
+         * PATCH
+         * @param $route
+         * @param null $data
+         * @param null $extra_headers
+         * @param false $send_in_json
+         * @return bool[]|mixed|string[]
+         */
         function patch_json_decode($route, $data = null, $extra_headers = null, $send_in_json = false)
         {
             $this->rawResult = $this->patch($route, $data, $extra_headers, $send_in_json);
@@ -2328,9 +2387,17 @@ if (!defined("_CLOUDFRAMEWORK_CORE_CLASSES_")) {
             return $ret;
         }
 
-        function delete_json_decode($route, $extra_headers = null, $data = null)
+        /**
+         * DELETE
+         * @param $route
+         * @param null $extra_headers
+         * @param null $data
+         * @param false $send_in_json
+         * @return bool[]|mixed|string[]
+         */
+        function delete_json_decode($route, $extra_headers = null, $data = null, $send_in_json = false)
         {
-            $this->rawResult = $this->delete($route, $extra_headers, $data);
+            $this->rawResult = $this->delete($route, $extra_headers, $data, $send_in_json);
             $ret = json_decode($this->rawResult, true);
             if (JSON_ERROR_NONE === json_last_error()) $this->rawResult = '';
             else {
@@ -2339,24 +2406,68 @@ if (!defined("_CLOUDFRAMEWORK_CORE_CLASSES_")) {
             return $ret;
         }
 
+        /**
+         * GET
+         * @param $route
+         * @param null $data
+         * @param null $extra_headers
+         * @param false $send_in_json
+         * @return bool|string
+         */
         function get($route, $data = null, $extra_headers = null, $send_in_json = false)
         {
             return $this->call($route, $data, 'GET', $extra_headers, $send_in_json);
         }
 
+        /**
+         * POST
+         * @param $route
+         * @param null $data
+         * @param null $extra_headers
+         * @param false $send_in_json
+         * @return bool|string
+         */
         function post($route, $data = null, $extra_headers = null, $send_in_json = false)
         {
             return $this->call($route, $data, 'POST', $extra_headers, $send_in_json);
         }
 
+        /**
+         * PUT
+         * @param $route
+         * @param null $data
+         * @param null $extra_headers
+         * @param false $send_in_json
+         * @return bool|string
+         */
         function put($route, $data = null, $extra_headers = null, $send_in_json = false)
         {
             return $this->call($route, $data, 'PUT', $extra_headers, $send_in_json);
         }
 
+        /**
+         * @param $route
+         * @param null $data
+         * @param null $extra_headers
+         * @param false $send_in_json
+         * @return bool|string
+         */
         function patch($route, $data = null, $extra_headers = null, $send_in_json = false)
         {
             return $this->call($route, $data, 'PATCH', $extra_headers, $send_in_json);
+        }
+
+        /**
+         * DELETE
+         * @param $route
+         * @param null $extra_headers
+         * @param null $data
+         * @param false $send_in_json
+         * @return bool|string
+         */
+        function delete($route, $extra_headers = null, $data = null, $send_in_json = false)
+        {
+            return $this->call($route, $data, 'DELETE', $extra_headers, $send_in_json);
         }
 
         /**
@@ -2382,6 +2493,7 @@ if (!defined("_CLOUDFRAMEWORK_CORE_CLASSES_")) {
          *
          *
          * Extra info: https://stackoverflow.com/questions/4003989/upload-a-file-using-file-get-contents
+         * For extra headers you can get further information in: https://www.php.net/manual/de/context.http.php
          * @param $route
          * @param null $data
          * @param string $verb
@@ -2402,6 +2514,7 @@ if (!defined("_CLOUDFRAMEWORK_CORE_CLASSES_")) {
             $this->core->__p->add("Request->{$verb}: ", "$route " . (($data === null) ? '{no params}' : '{with params}'), 'note');
             // Performance for connections
             $options = array('ssl' => array('verify_peer' => false));
+            $options['http']['protocol_version'] = '1.1';
             $options['http']['ignore_errors'] = '1';
             $options['http']['header'] = 'Connection: close' . "\r\n";
             $options['http']['header'] = 'Accept: */*' . "\r\n";
@@ -2560,7 +2673,6 @@ if (!defined("_CLOUDFRAMEWORK_CORE_CLASSES_")) {
             if($this->sendSysLogs) {
                 $_time = round(microtime(TRUE) -$_time,4);
                 $this->core->logs->sendToSysLog("end request {$verb} {$route} ".(($data === null) ? '{no params}' : '{with params}')." {$_time} secs",(($this->error)?'debug':'info'));
-
             }
 
             //syslog(($this->error)?LOG_DEBUG:LOG_INFO,"end request {$verb} {$route} ".(($data === null) ? '{no params}' : '{with params}'));
@@ -2569,10 +2681,6 @@ if (!defined("_CLOUDFRAMEWORK_CORE_CLASSES_")) {
             return ($ret);
         }
 
-        function delete($route, $extra_headers = null, $data = null)
-        {
-            return $this->call($route, $data, 'DELETE', $extra_headers);
-        }
 
         /*
          * Returns the status number of the last call
@@ -2607,7 +2715,7 @@ if (!defined("_CLOUDFRAMEWORK_CORE_CLASSES_")) {
                 $this->core->logs->add('conf-var CLOUDFRAMEWORK-ID-' . $id . ' missing.');
             } else {
                 if (!strlen($time)) $time = microtime(true);
-                $date = new \DateTime(null, new \DateTimeZone('UTC'));
+                $date = new DateTime(null, new DateTimeZone('UTC'));
                 $time += $date->getOffset();
                 $ret = $id . '__UTC__' . $time;
                 $ret .= '__' . hash_hmac('sha1', $ret, $secret);
