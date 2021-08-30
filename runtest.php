@@ -1,7 +1,7 @@
 <?php
 /**
- * CloudFrameworkTests 2.1.6
- * last-update: 2021-01
+ * CloudFrameworkTests 2.1.8
+ * last-update: 2021-08
  * https://www.notion.so/cloudframework/Designing-API-Tests-from-CloudFramework-afc8d166610f4b8e98742b98c504053f
  */
 
@@ -90,7 +90,7 @@ if (!defined("_CLOUDFRAMEWORK_CORE_CLASSES_")) {
     final class Core7
     {
 
-        var $_version = 'v73.13131';
+        var $_version = 'v73.20251';
 
         /**
          * @var array $loadedClasses control the classes loaded
