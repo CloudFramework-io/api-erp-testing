@@ -3362,7 +3362,7 @@ if (!defined("_CLOUDFRAMEWORK_CORE_CLASSES_")) {
     }
 }
 
-//region SET $rootPath and Autload libraries
+//region SET $rootPath and Autoload libraries
 $rootPath = exec('pwd');
 //endregion
 
