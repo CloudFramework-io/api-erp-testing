@@ -7,5 +7,6 @@ Ir requires to have user/password in your CloudFramework ERP Instance.
 ```
 composer require cloudframework-io/api-erp-testing
 alias cftest="php vendor/cloudframework-io/api-erp-testing/runtest.php"
+alias cfapi="php vendor/cloudframework-io/api-erp-testing/runapi.php"
 cftest erp/{your_org}
 ```
